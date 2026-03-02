@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, use } from "react";
 import { FrameDisplay } from "@/components/player/frame-display";
 import { Timeline } from "@/components/player/timeline";
 import { PlayerControls } from "@/components/player/player-controls";
+import { ExportPanel } from "@/components/player/export-panel";
 import type { SessionManifest } from "@/lib/types";
 
 export default function PlayerPage({
@@ -160,6 +161,8 @@ export default function PlayerPage({
           onToggleExport={() => setShowExport((p) => !p)}
         />
       </div>
+
+      <ExportPanel sessionId={sessionId} open={showExport} onClose={() => setShowExport(false)} />
     </main>
   );
 }
