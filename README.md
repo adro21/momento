@@ -14,7 +14,8 @@ Momento walks through a repository's commit history, captures screenshots of a s
 - **Video export** — render to MP4, WebM, or GIF via FFmpeg
 - **Curtain mode** — optional theater curtain overlay during capture for the patient types
 - **Resilient** — failed builds are skipped, captures can be cancelled, partial sessions are still viewable
-- **Fast** — git worktrees for isolation (never touches your working copy), smart node_modules caching between commits
+- **Safe mode** — clones repo to a temp directory before capture so your original `.git/` is never touched (default, uses `--local` hardlinks for near-zero overhead)
+- **Fast** — git worktrees for isolation, smart node_modules caching between commits
 
 ## Prerequisites
 
@@ -53,6 +54,7 @@ Open [http://localhost:3000](http://localhost:3000), click **New Capture**, and 
 
 - **node_modules caching** — if `package.json` hasn't changed between commits, node_modules are reused (~80% of commits skip install)
 - **Duplicate detection** — frames that are visually identical to the previous are automatically detected and skipped using pixelmatch
+- **Safe mode (default)** — the repo is cloned to `/tmp` using `git clone --local --no-checkout`, which hardlinks objects (near-instant, negligible disk). All worktree operations happen against the clone, so the original repo's `.git/` is never written to. A "Direct" toggle is available for cases where `/tmp` is on a different filesystem
 - **Git worktrees** — each commit is checked out in an isolated temporary directory, so your working copy is never touched
 
 ## Keyboard Shortcuts (Player)
