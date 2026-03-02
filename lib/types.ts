@@ -30,6 +30,9 @@ export interface CaptureConfig {
   serverCommand?: string; // custom override
   timeout: number; // ms per commit
   concurrency: number;
+  startCommitIndex?: number; // 0-based chronological (0 = oldest). Absent = full range.
+  endCommitIndex?: number; // 0-based chronological (0 = oldest). Absent = full range.
+  safeMode?: boolean; // default true — clone repo to /tmp so original is never touched
 }
 
 export interface SessionManifest {

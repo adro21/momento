@@ -10,6 +10,9 @@ interface CaptureProgressProps {
   branch: string;
   route: string;
   samplingN: number;
+  startCommitIndex?: number;
+  endCommitIndex?: number;
+  safeMode?: boolean;
   onComplete: (sessionId: string) => void;
 }
 
@@ -252,6 +255,9 @@ export function CaptureProgress({
   branch,
   route,
   samplingN,
+  startCommitIndex,
+  endCommitIndex,
+  safeMode,
   onComplete,
 }: CaptureProgressProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -278,6 +284,9 @@ export function CaptureProgress({
             branch,
             route,
             sampling: { type: "every-nth", n: samplingN },
+            startCommitIndex,
+            endCommitIndex,
+            safeMode,
           }),
           signal: controller.signal,
         });
@@ -330,7 +339,7 @@ export function CaptureProgress({
 
     startCapture();
     return () => controller.abort();
-  }, [repoPath, branch, route, samplingN]);
+  }, [repoPath, branch, route, samplingN, startCommitIndex, endCommitIndex, safeMode]);
 
   const handleCancel = async () => {
     if (sessionId) {

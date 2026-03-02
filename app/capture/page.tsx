@@ -16,6 +16,9 @@ interface WizardState {
   branches: { current: string; all: string[] };
   route: string;
   samplingN: number;
+  startCommitIndex?: number;
+  endCommitIndex?: number;
+  safeMode?: boolean;
 }
 
 export default function CapturePage() {
@@ -56,6 +59,9 @@ export default function CapturePage() {
           branch={state.branch ?? "main"}
           route={state.route ?? "/"}
           samplingN={state.samplingN ?? 5}
+          startCommitIndex={state.startCommitIndex}
+          endCommitIndex={state.endCommitIndex}
+          safeMode={state.safeMode}
           onComplete={(sessionId) => router.push(`/player/${sessionId}`)}
         />
       )}

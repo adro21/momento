@@ -21,6 +21,9 @@ export async function POST(request: Request) {
     serverCommand,
     timeout,
     concurrency,
+    startCommitIndex,
+    endCommitIndex,
+    safeMode,
   } = body as {
     repoPath: string;
     branch: string;
@@ -30,6 +33,9 @@ export async function POST(request: Request) {
     serverCommand?: string;
     timeout?: number;
     concurrency?: number;
+    startCommitIndex?: number;
+    endCommitIndex?: number;
+    safeMode?: boolean;
   };
 
   // Validate repo
@@ -41,25 +47,35 @@ export async function POST(request: Request) {
     });
   }
 
-  // Get commits and apply sampling
+  // Get commits and optionally slice to a sub-range
   const allCommits = await git.listCommits(branch);
+
+  let commitsToSample = allCommits;
+  if (startCommitIndex != null || endCommitIndex != null) {
+    // Indices are chronological (0 = oldest). listCommits returns newest-first.
+    const chronological = [...allCommits].reverse();
+    const start = startCommitIndex ?? 0;
+    const end = endCommitIndex ?? chronological.length - 1;
+    commitsToSample = [...chronological.slice(start, end + 1)].reverse();
+  }
+
   let sampledCommits;
 
   switch (sampling.type) {
     case "every-nth":
-      sampledCommits = git.sampleEveryNth(allCommits, sampling.n);
+      sampledCommits = git.sampleEveryNth(commitsToSample, sampling.n);
       break;
     case "time-based":
-      sampledCommits = git.sampleByTime(allCommits, sampling.interval);
+      sampledCommits = git.sampleByTime(commitsToSample, sampling.interval);
       break;
     case "manual":
-      sampledCommits = allCommits.filter((c) =>
+      sampledCommits = commitsToSample.filter((c) =>
         sampling.hashes.includes(c.hash)
       );
       break;
     default: {
-      const n = Math.max(1, Math.floor(allCommits.length / DEFAULT_TARGET_FRAMES));
-      sampledCommits = git.sampleEveryNth(allCommits, n);
+      const n = Math.max(1, Math.floor(commitsToSample.length / DEFAULT_TARGET_FRAMES));
+      sampledCommits = git.sampleEveryNth(commitsToSample, n);
     }
   }
 
@@ -72,6 +88,9 @@ export async function POST(request: Request) {
     serverCommand,
     timeout: timeout ?? DEFAULT_TIMEOUT,
     concurrency: concurrency ?? DEFAULT_CONCURRENCY,
+    startCommitIndex,
+    endCommitIndex,
+    safeMode: safeMode !== false,
   };
 
   const repoName = await git.getRepoName();

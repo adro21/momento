@@ -94,6 +94,14 @@ export class GitOperations {
     return result;
   }
 
+  async cloneLocal(targetPath: string): Promise<GitOperations> {
+    await simpleGit().clone(this.repoPath, targetPath, [
+      "--local",
+      "--no-checkout",
+    ]);
+    return new GitOperations(targetPath);
+  }
+
   async createWorktree(commitHash: string, targetPath: string): Promise<void> {
     await this.git.raw(["worktree", "add", "--detach", targetPath, commitHash]);
   }

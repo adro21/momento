@@ -7,7 +7,7 @@ import { detectServerCommand } from "./server-detect";
 import { startDevServer, pollForReady } from "./dev-server";
 import { takeScreenshot, closeBrowser } from "./screenshot";
 import { isDuplicate } from "./frame-dedup";
-import { WORKTREE_PREFIX, PORT_RANGE_START } from "./constants";
+import { WORKTREE_PREFIX, CLONE_PREFIX, PORT_RANGE_START } from "./constants";
 import type {
   CaptureConfig,
   CommitInfo,
@@ -36,7 +36,18 @@ export async function runCapture(options: CaptureEngineOptions): Promise<void> {
     abortSignal,
   } = options;
 
-  const git = new GitOperations(config.repoPath);
+  const safeMode = config.safeMode !== false;
+  let clonePath: string | null = null;
+  let git: GitOperations;
+
+  if (safeMode) {
+    clonePath = `${CLONE_PREFIX}${sessionId}`;
+    const sourceGit = new GitOperations(config.repoPath);
+    git = await sourceGit.cloneLocal(clonePath);
+  } else {
+    git = new GitOperations(config.repoPath);
+  }
+
   const framesDir = sessionManager.getFramesDir(sessionId);
   let prevPackageHash: string | null = null;
   let prevNodeModulesPath: string | null = null;
@@ -244,6 +255,13 @@ export async function runCapture(options: CaptureEngineOptions): Promise<void> {
     await sessionManager.update(sessionId, { status: "completed" });
   } finally {
     await closeBrowser();
+    if (clonePath) {
+      try {
+        await fs.rm(clonePath, { recursive: true, force: true });
+      } catch {
+        // ignore cleanup failure
+      }
+    }
   }
 }
 

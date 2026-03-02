@@ -4,6 +4,7 @@ import os from "os";
 export const MOMENTO_DIR = path.join(os.homedir(), ".momento");
 export const SESSIONS_DIR = path.join(MOMENTO_DIR, "sessions");
 export const WORKTREE_PREFIX = path.join(os.tmpdir(), "momento-wt-");
+export const CLONE_PREFIX = path.join(os.tmpdir(), "momento-clone-");
 
 export const DEFAULT_VIEWPORT = { width: 1280, height: 800 };
 export const DEFAULT_TIMEOUT = 60_000; // 60s per commit
