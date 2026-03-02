@@ -6,6 +6,7 @@ import { SessionManager } from "./session";
 import { detectServerCommand } from "./server-detect";
 import { startDevServer, pollForReady } from "./dev-server";
 import { takeScreenshot, closeBrowser } from "./screenshot";
+import { isDuplicate } from "./frame-dedup";
 import { WORKTREE_PREFIX, PORT_RANGE_START } from "./constants";
 import type {
   CaptureConfig,
@@ -39,6 +40,7 @@ export async function runCapture(options: CaptureEngineOptions): Promise<void> {
   const framesDir = sessionManager.getFramesDir(sessionId);
   let prevPackageHash: string | null = null;
   let prevNodeModulesPath: string | null = null;
+  let lastUniqueFramePath: string | null = null;
 
   try {
     for (let i = 0; i < commits.length; i++) {
@@ -159,7 +161,33 @@ export async function runCapture(options: CaptureEngineOptions): Promise<void> {
             viewport: config.viewport,
           });
 
-          // 6. Record success
+          // 6. Dedup check — compare to previous unique frame
+          if (lastUniqueFramePath) {
+            const dupe = await isDuplicate(lastUniqueFramePath, outputPath);
+            if (dupe) {
+              // Delete the duplicate file and record as skipped
+              await fs.unlink(outputPath);
+              const frame: FrameMetadata = {
+                index: i,
+                commit,
+                filename: frameFilename,
+                status: "skipped",
+              };
+              await sessionManager.addFrame(sessionId, frame);
+
+              onProgress({
+                sessionId,
+                currentIndex: i,
+                totalFrames: commits.length,
+                currentCommit: commit,
+                status: "skipped",
+              });
+              continue;
+            }
+          }
+          lastUniqueFramePath = outputPath;
+
+          // 7. Record success
           const frame: FrameMetadata = {
             index: i,
             commit,
